@@ -19,8 +19,28 @@ def sorted_positions(raw_steps, n_steps):
     if len(steps[0]) == 1:
         step_triggers[0] = steps[0][0]
     else:
+        # Sort by the (possibly fractional) normalised step, keep stable order
         for s in sorted(steps, key=lambda s: normalise_steps(s[1] if len(s) == 2 else 1, n_steps)):
-            step_triggers[int(normalise_steps(s[1] if len(s) == 2 else 1, n_steps))] = s[0]
+            raw_step = normalise_steps(s[1] if len(s) == 2 else 1, n_steps)
+            desired = int(raw_step)
+            # clamp into valid range
+            if desired < 0:
+                desired = 0
+            if desired > max(0, n_steps - 1):
+                desired = n_steps - 1
+            # if the desired slot is taken, advance to the next free slot
+            orig_desired = desired
+            while desired in step_triggers and desired < n_steps - 1:
+                desired += 1
+            # If we hit the end and it's still taken, search backwards for a free slot
+            if desired in step_triggers:
+                desired = orig_desired - 1
+                while desired in step_triggers and desired > 0:
+                    desired -= 1
+                if desired in step_triggers:
+                    # as a last resort, overwrite the original slot
+                    desired = orig_desired
+            step_triggers[int(desired)] = s[0]
     return step_triggers
 
 
