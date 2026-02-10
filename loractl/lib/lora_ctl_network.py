@@ -12,7 +12,7 @@ sys.path.remove(lora_path)
 
 from modules.processing import StableDiffusionProcessing
 from modules.extra_networks import ExtraNetworkParams
-from modules_forge.forge_sampler import sampling_prepare
+from backend.sampling.sampling_function import sampling_prepare
 
 lora_weights = {}
 
@@ -80,3 +80,4 @@ class LoraCtlNetwork(extra_networks_lora.ExtraNetworkLora):
                 params_map[name].positional = [name, str(weight)]
                 params_map[name].named = {}
         super().activate(p, self.params_list)
+
