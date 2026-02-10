@@ -27,8 +27,8 @@ class LoraCtlScript(scripts.Script):
         return [opt_enable, opt_plot_lora_weight]
 
     def process(self, p: StableDiffusionProcessing, opt_enable=True, opt_plot_lora_weight=False, **kwargs):
+        self.original_network = extra_networks.extra_network_registry["lora"]
         if opt_enable and type(extra_networks.extra_network_registry["lora"]) != lora_ctl_network.LoraCtlNetwork:
-            self.original_network = extra_networks.extra_network_registry["lora"]
             network = lora_ctl_network.LoraCtlNetwork()
             extra_networks.register_extra_network(network)
             extra_networks.register_extra_network_alias(network, "loractl")
@@ -52,3 +52,4 @@ class LoraCtlScript(scripts.Script):
         lora_network = extra_networks.extra_network_registry["lora"]
         if isinstance(lora_network, lora_ctl_network.LoraCtlNetwork):
             lora_network.reload_weights_for_step(p, kwargs['d'])
+
