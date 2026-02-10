@@ -41,9 +41,9 @@ class LoraCtlNetwork(extra_networks_lora.ExtraNetworkLora):
                 params_map[name].positional = [name, str(weight)]
                 params_map[name].named = {}
             super().activate(p, self.params_list)
-            sampling_prepare(p.sd_model.forge_objects.unet, d['x'])
             p.sd_model.forge_objects = p.sampler.model_wrap.inner_model.forge_objects_after_applying_lora.shallow_copy()
             p.scripts.process_before_every_sampling(p)
+            sampling_prepare(p.sd_model.forge_objects.unet, d['x'])
 
 
     def activate(self, p: StableDiffusionProcessing, params_list: list[ExtraNetworkParams]):
