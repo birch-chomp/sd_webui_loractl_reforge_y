@@ -1,3 +1,4 @@
+from modules.script_callbacks import CFGDenoiserParams, on_cfg_denoiser
 import modules.scripts as scripts
 from modules import extra_networks
 from modules.processing import StableDiffusionProcessing
@@ -7,6 +8,7 @@ from loractl.lib import utils, plot, lora_ctl_network, network_patch
 class LoraCtlScript(scripts.Script):
     def __init__(self):
         self.original_network = None
+        self.sampling_p = None
         super().__init__()
 
     sorting_priority = 10.2
@@ -41,15 +43,19 @@ class LoraCtlScript(scripts.Script):
         lora_ctl_network.reset_weights()
         plot.reset_plot()
 
+        # Taken from https://github.com/hako-mikan/sd-webui-lora-block-weight/blob/b403cb7300f288360023c2a1978b86a361934e24/scripts/lora_block_weight.py#L436
+        # This allows reloading lora weights at each step without modifying Classic/Neo's scripts and samplers code
+        if not hasattr(self,"lbt_dr_callbacks"):
+            self.lbt_dr_callbacks = on_cfg_denoiser(self.denoiser_callback)
+
+    def denoiser_callback(self, params: CFGDenoiserParams):
+        lora_network = extra_networks.extra_network_registry["lora"]
+        if isinstance(lora_network, lora_ctl_network.LoraCtlNetwork):
+            lora_network.reload_weights_for_step(params.denoiser.p, { "i": params.sampling_step, "x": params.x })
+
     def before_hr(self, p, *args):
         utils.set_hires(True)
 
     def postprocess(self, p, processed, opt_enable=True, opt_plot_lora_weight=False, **kwargs):
         if opt_plot_lora_weight and opt_enable:
             processed.images.extend([plot.make_plot()])
-
-    def process_before_every_step(self, p: StableDiffusionProcessing, *args, **kwargs):
-        lora_network = extra_networks.extra_network_registry["lora"]
-        if isinstance(lora_network, lora_ctl_network.LoraCtlNetwork):
-            lora_network.reload_weights_for_step(p, kwargs['d'])
-
